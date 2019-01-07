@@ -24,6 +24,7 @@ def get_pmf(cdf):
         pis[score+1] = cdf[score+1] - cdf[score]
     return pis
 
+#depricated
 # to calculate new shifted score distributions for different bank types
 def get_shifted_score_distributions(pis, shift, iterations):
     for k in range(0, iterations):
@@ -64,8 +65,72 @@ def pis2cdf(pis):
 
     return cdf
 
+# get reference customer scores
+def get_ref_customers(customer_totals, pis_total, scores_list):
+    ref_customers = []
+    for i in range(0,len(pis_total)):
+        pointer = 0
+        ref_customers.append(np.zeros(customer_totals[i]))
+        for j in range(0, len(pis_total[i])):
+            if j == 0:
+                diff_up = (scores_list[j+1]-scores_list[j])/2
+                step = diff_up/pis_total[i][j]
+            elif j == len(pis_total[i])-1:
+                diff_down = (scores_list[j]-scores_list[j-1])/2
+                step = diff_down/pis_total[i][j]
+            else:
+                diff_down = (scores_list[j]-scores_list[j-1])/2
+                diff_up = (scores_list[j+1]-scores_list[j])/2
+                step = (diff_down+diff_up)/pis_total[i][j]
 
-#TODO> rewrite for multiple banks
+            for k in range(0,int(pis_total[i][j])):
+                if i == 0:
+                    ref_customers[i][pointer] = np.round(scores_list[j] + k*step) 
+                else:
+                    ref_customers[i][pointer] = np.round(scores_list[j]-diff_down + k*step)
+                pointer += 1
+    
+    return ref_customers
+
+# recalculate score for different banks
+#customers.shape = XxYxZ; X=Groups(white,black), Y=Banks, Z=Individual scores
+def get_customers(ref_customers, customer_totals, score_shifts, score_range):
+    customers = []
+    for i in range(0, len(ref_customers)):
+        customers.append(np.zeros([len(score_shifts), customer_totals[i]]))
+        for j in range(0,len(customers[i])):
+            for k in range(0,len(customers[i][j])):
+                if ref_customers[i][k] + score_shifts[j] < score_range[0]:
+                    customers[i][j][k] = score_range[0]
+                elif ref_customers[i][k] + score_shifts[j] > score_range[1]:
+                    customers[i][j][k] = score_range[1]
+                else:
+                    customers[i][j][k] = ref_customers[i][k] + score_shifts[j]
+    return customers
+
+#customer scores to cdfs
+#customer_cdfs.shape = XxYxZ, X=Groups, Y=Banks, Z= CDF for score range
+def get_customer_cdfs(customers, scores_list):
+    customer_cdfs = np.ones([len(customers), len(customers[0]), len(scores_list)])
+    for i in range(0,len(customers)):
+        for j in range(0, len(customers[i])):
+            pointer = 0
+            for k in range(0, len(scores_list)):
+                if k == len(scores_list)-1:
+                    upper_thres = scores_list[k]
+                else:
+                    upper_thres = scores_list[k]+(scores_list[k+1]-scores_list[k])/2
+
+                for l in range(pointer,len(customers[i][j])):
+                    if customers[i][j][l] <= upper_thres:
+                        pointer += 1 
+                    else:
+                        customer_cdfs[i][j][k]=pointer/len(customers[i][j])
+                        break
+    return customer_cdfs
+
+
+#TODO rewrite for multiple banks
 #distribution if we take into account that customers take loan with lowest interest rate
 def get_pi_combined(pi_normal,pi_conservative, scores, score_interest_intersect):
     pis = np.zeros(pi_conservative.size)
