@@ -7,6 +7,7 @@ def perp( a ) :
     b[1] = a[0]
     return b
 
+
 def seg_intersect(a1,a2, b1,b2) :
     da = a2-a1
     db = b2-b1
@@ -16,6 +17,7 @@ def seg_intersect(a1,a2, b1,b2) :
     num = np.dot( dap, dp )
     return (num / denom.astype(float))*db + b1
 
+
 # to populate group distributions
 def get_pmf(cdf):
     pis = np.zeros(cdf.size)
@@ -24,34 +26,17 @@ def get_pmf(cdf):
         pis[score+1] = cdf[score+1] - cdf[score]
     return pis
 
-#depricated
-# to calculate new shifted score distributions for different bank types
-def get_shifted_score_distributions(pis, shift, iterations):
-    for k in range(0, iterations):
-        pis_change = np.zeros(2)
-        check = np.zeros(2)
-    
-        if shift < 0:
-            for i in range(len(pis[0]) - 1, -1, -1):
-                for j in range(0, len(pis)):
-                    pis[j][i] += pis_change[j]
-                    pis_change[j] = (pis[j][i]-pis_change[j])*np.abs(shift)
-                    if i > 0:
-                        pis[j][i] -= pis_change[j]
-                    check[j] += pis[j][i]
-            print(check)
 
-        elif shift > 0:
-            for i in range(0, len(pis[0])):
-                for j in range(0, len(pis)):
-                    pis[j][i] += pis_change[j]
-                    pis_change[j] = (pis[j][i]-pis_change[j])*np.abs(shift)
-                    if i < len(pis[0])-1:
-                        pis[j][i] -= pis_change[j]              
-                    check[j] += pis[j][i]
-            print(check)
-    
+# to populate multiple group distributions
+def get_pmfs(cdfs):
+    pis=[]
+    for i in range(0,len(cdfs)):
+        tmp_pis = np.zeros(len(cdfs[i]))
+        tmp_pis[0] = cdfs[i][0]
+        for score in range(len(cdf[i])-1):
+            tmp_pis[score+1] = cdfs[i][score+1] - cdfs[i][score]
     return pis
+
 
 def pis2cdf(pis):
     cdf = np.zeros(pis.size)
@@ -64,6 +49,7 @@ def pis2cdf(pis):
             cdf[i] = cumulation
 
     return cdf
+
 
 # get reference customer scores
 def get_ref_customers(customer_totals, pis_total, scores_list):
@@ -91,6 +77,7 @@ def get_ref_customers(customer_totals, pis_total, scores_list):
                 pointer += 1
     
     return ref_customers
+
 
 # recalculate score for different banks
 #customers.shape = XxYxZ; X=Groups(white,black), Y=Banks, Z=Individual scores
@@ -128,6 +115,18 @@ def get_customer_cdfs(customers, scores_list):
                         customer_cdfs[i][j][k]=pointer/len(customers[i][j])
                         break
     return customer_cdfs
+
+# to populate multiple group distributions
+def get_customer_pis(customer_cdfs):
+    pis=[]
+    for i in range(0,len(customer_cdfs)):
+        tmp_pis = np.zeros([len(customer_cdfs[i]), len(customer_cdfs[i][0])])
+        for j in range(len(customer_cdfs[i])):
+            tmp_pis[j][0] = customer_cdfs[i][j][0]
+            for score in range(len(customer_cdfs[i][j])-1):
+                tmp_pis[j][score+1] = customer_cdfs[i][j][score+1] - customer_cdfs[i][j][score]
+        pis.append(tmp_pis)
+    return pis
 
 
 #TODO rewrite for multiple banks
@@ -171,5 +170,34 @@ def get_pi_combined(pi_normal,pi_conservative, scores, score_interest_intersect)
         cumulative_check += pis[i]
     print(cumulative_check)
         
+    
+    return pis
+
+#depricated
+# to calculate new shifted score distributions for different bank types
+def get_shifted_score_distributions(pis, shift, iterations):
+    for k in range(0, iterations):
+        pis_change = np.zeros(2)
+        check = np.zeros(2)
+    
+        if shift < 0:
+            for i in range(len(pis[0]) - 1, -1, -1):
+                for j in range(0, len(pis)):
+                    pis[j][i] += pis_change[j]
+                    pis_change[j] = (pis[j][i]-pis_change[j])*np.abs(shift)
+                    if i > 0:
+                        pis[j][i] -= pis_change[j]
+                    check[j] += pis[j][i]
+            print(check)
+
+        elif shift > 0:
+            for i in range(0, len(pis[0])):
+                for j in range(0, len(pis)):
+                    pis[j][i] += pis_change[j]
+                    pis_change[j] = (pis[j][i]-pis_change[j])*np.abs(shift)
+                    if i < len(pis[0])-1:
+                        pis[j][i] -= pis_change[j]              
+                    check[j] += pis[j][i]
+            print(check)
     
     return pis
