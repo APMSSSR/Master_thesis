@@ -50,7 +50,6 @@ def pis2cdf(pis):
 
     return cdf
 
-
 # get reference customer scores
 def get_ref_customers(customer_totals, pis_total, scores_list):
     ref_customers = []
@@ -58,19 +57,24 @@ def get_ref_customers(customer_totals, pis_total, scores_list):
         pointer = 0
         ref_customers.append(np.zeros(customer_totals[i]))
         for j in range(0, len(pis_total[i])):
-            if j == 0:
-                diff_up = (scores_list[j+1]-scores_list[j])/2
-                step = diff_up/pis_total[i][j]
-            elif j == len(pis_total[i])-1:
-                diff_down = (scores_list[j]-scores_list[j-1])/2
-                step = diff_down/pis_total[i][j]
+            diff_up = 0
+            diff_down = 0
+            if pis_total[i][j] == 0:
+                step = 0
             else:
-                diff_down = (scores_list[j]-scores_list[j-1])/2
-                diff_up = (scores_list[j+1]-scores_list[j])/2
-                step = (diff_down+diff_up)/pis_total[i][j]
+                if j == 0:
+                    diff_up = (scores_list[j+1]-scores_list[j])/2
+                    step = diff_up/pis_total[i][j]
+                elif j == len(pis_total[i])-1:
+                    diff_down = (scores_list[j]-scores_list[j-1])/2
+                    step = diff_down/pis_total[i][j]
+                else:
+                    diff_down = (scores_list[j]-scores_list[j-1])/2
+                    diff_up = (scores_list[j+1]-scores_list[j])/2
+                    step = (diff_down+diff_up)/pis_total[i][j]
 
             for k in range(0,int(pis_total[i][j])):
-                if i == 0:
+                if j == 0:
                     ref_customers[i][pointer] = np.round(scores_list[j] + k*step) 
                 else:
                     ref_customers[i][pointer] = np.round(scores_list[j]-diff_down + k*step)
@@ -128,8 +132,30 @@ def get_customer_pis(customer_cdfs):
         pis.append(tmp_pis)
     return pis
 
+#calculate combined scores based on best interest rate
+def get_combined_scores(customer_scores, score_interest_intersect):
+    combined_scores =[]
+    for i in range(0,len(customer_scores)):
+        pointer = 0
+        bank = 0
+        tmp_combined_scores = np.zeros(len(customer_scores[i][bank]))
+        for j in range(len(customer_scores[i][bank])-1,-1,-1):
+            if customer_scores[i][bank][j] > score_interest_intersect[pointer]:
+                tmp_combined_scores[j] = customer_scores[i][bank][j]
+            else:
+                if pointer < 1:
+                    pointer += 1
+                if bank < len(customer_scores[i])-1:
+                    bank += 1
+                tmp_combined_scores[j] = customer_scores[i][bank][j]
+                
+        combined_scores.append(tmp_combined_scores)        
+            
+    
+    return combined_scores
 
-#TODO rewrite for multiple banks
+
+
 #distribution if we take into account that customers take loan with lowest interest rate
 def get_pi_combined(pi_normal,pi_conservative, scores, score_interest_intersect):
     pis = np.zeros(pi_conservative.size)
@@ -172,6 +198,7 @@ def get_pi_combined(pi_normal,pi_conservative, scores, score_interest_intersect)
         
     
     return pis
+
 
 #depricated
 # to calculate new shifted score distributions for different bank types
