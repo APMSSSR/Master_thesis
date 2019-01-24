@@ -19,6 +19,7 @@ def seg_intersect(a1,a2, b1,b2) :
     num = np.dot( dap, dp )
     return (num / denom.astype(float))*db + b1
 
+
 #get score mapping to interest rates for different banks
 def get_i_rates(interest_rates, score_range):
     plt.figure(0)
@@ -43,13 +44,6 @@ def get_i_rates(interest_rates, score_range):
     score_interest_rates = dict(zip(x_axis, np.transpose(tmp_rates)))
     return score_interest_rates
 
-# to populate group distributions
-def get_pmf(cdf):
-    pis = np.zeros(cdf.size)
-    pis[0] = cdf[0]
-    for score in range(cdf.size-1):
-        pis[score+1] = cdf[score+1] - cdf[score]
-    return pis
 
 #get simulated repay outcome of score probability(1=repaid, 0=default )
 def get_repay_outcome(repay_probability):
@@ -59,6 +53,24 @@ def get_repay_outcome(repay_probability):
     if random_number < 1-repay_probability:
         outcome = 0
     return outcome
+
+
+#outputs the index of a bank with lowest interest rate 
+def get_minimal_interest_bank(score_interest_rates, customer_scores, N_banks, group_index, customer_index):
+    interest_values=[]
+    for bank in range(N_banks):
+        interest_values.append(score_interest_rates[customer_scores[group_index][bank][customer_index]][bank])
+    
+    return interest_values.index(min(interest_values)) 
+
+
+# to populate group distributions
+def get_pmf(cdf):
+    pis = np.zeros(cdf.size)
+    pis[0] = cdf[0]
+    for score in range(cdf.size-1):
+        pis[score+1] = cdf[score+1] - cdf[score]
+    return pis
 
 
 # to populate multiple group distributions
@@ -166,6 +178,8 @@ def get_customer_pis(customer_cdfs):
         pis.append(tmp_pis)
     return pis
 
+
+## TODO: Refactor with interest rates dict
 #calculate combined scores based on best interest rate
 def get_combined_scores(customer_scores, score_interest_intersect):
     combined_scores =[]
