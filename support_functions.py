@@ -1,4 +1,6 @@
 import numpy as np
+import random
+import matplotlib.pyplot as plt
 
 # intersection computation
 def perp( a ) :
@@ -17,6 +19,29 @@ def seg_intersect(a1,a2, b1,b2) :
     num = np.dot( dap, dp )
     return (num / denom.astype(float))*db + b1
 
+#get score mapping to interest rates for different banks
+def get_i_rates(interest_rates, score_range):
+    plt.figure(0)
+    x_axis = np.linspace(score_range[0],score_range[1],score_range[1]-score_range[0]+1, dtype=int)
+    tmp_rates = []
+    for i in range(len(interest_rates)):
+        coefficients = np.polyfit(score_range, interest_rates[i], 1)
+        polynomial = np.poly1d(coefficients)
+        y_axis = polynomial(x_axis)
+        tmp_rates.append(y_axis)
+        plt.plot(x_axis, y_axis)
+    
+    plt.ylabel('Interest rate')
+    plt.xlabel('Score')
+    plt.title('Dependence of interest rate on score for different banks')
+    plt.legend(loc="upper right")
+    plt.grid('on')
+    plt.plot(x_axis, np.max(tmp_rates)-np.amin(tmp_rates,axis=0),color='black',LineStyle=':')
+   
+    plt.show()
+  
+    score_interest_rates = dict(zip(x_axis, np.transpose(tmp_rates)))
+    return score_interest_rates
 
 # to populate group distributions
 def get_pmf(cdf):
@@ -25,6 +50,15 @@ def get_pmf(cdf):
     for score in range(cdf.size-1):
         pis[score+1] = cdf[score+1] - cdf[score]
     return pis
+
+#get simulated repay outcome of score probability(1=repaid, 0=default )
+def get_repay_outcome(repay_probability):
+    random_number = random.random()
+    outcome = 1
+    #print(random_number)
+    if random_number < 1-repay_probability:
+        outcome = 0
+    return outcome
 
 
 # to populate multiple group distributions
@@ -85,10 +119,10 @@ def get_ref_customers(customer_totals, pis_total, scores_list):
 
 # recalculate score for different banks
 #customers.shape = XxYxZ; X=Groups(white,black), Y=Banks, Z=Individual scores
-def get_customers(ref_customers, customer_totals, score_shifts, score_range):
+def get_customers(ref_customers, score_shifts, score_range):
     customers = []
     for i in range(0, len(ref_customers)):
-        customers.append(np.zeros([len(score_shifts), customer_totals[i]]))
+        customers.append(np.zeros([len(score_shifts), len(ref_customers[i])], dtype=np.int16))
         for j in range(0,len(customers[i])):
             for k in range(0,len(customers[i][j])):
                 if ref_customers[i][k] + score_shifts[j] < score_range[0]:
