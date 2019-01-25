@@ -21,7 +21,7 @@ def seg_intersect(a1,a2, b1,b2) :
 
 
 #get score mapping to interest rates for different banks
-def get_i_rates(interest_rates, score_range):
+def get_i_rates(interest_rates, score_range, bank_names):
     plt.figure(0)
     x_axis = np.linspace(score_range[0],score_range[1],score_range[1]-score_range[0]+1, dtype=int)
     tmp_rates = []
@@ -30,15 +30,14 @@ def get_i_rates(interest_rates, score_range):
         polynomial = np.poly1d(coefficients)
         y_axis = polynomial(x_axis)
         tmp_rates.append(y_axis)
-        plt.plot(x_axis, y_axis)
+        plt.plot(x_axis, y_axis,label=bank_names[i]+" bank")
     
+    plt.plot(x_axis, np.max(tmp_rates)-np.amin(tmp_rates,axis=0),color='black',LineStyle=':', label="customer utility curve")
     plt.ylabel('Interest rate')
     plt.xlabel('Score')
     plt.title('Dependence of interest rate on score for different banks')
-    plt.legend(loc="upper right")
     plt.grid('on')
-    plt.plot(x_axis, np.max(tmp_rates)-np.amin(tmp_rates,axis=0),color='black',LineStyle=':')
-   
+    plt.legend(loc="lower left")
     plt.show()
   
     score_interest_rates = dict(zip(x_axis, np.transpose(tmp_rates)))
@@ -62,6 +61,34 @@ def get_minimal_interest_bank(score_interest_rates, customer_scores, N_banks, gr
         interest_values.append(score_interest_rates[customer_scores[group_index][bank][customer_index]][bank])
     
     return interest_values.index(min(interest_values)) 
+
+def get_next_ref_customer_scores(ref_customers, score_interest_rates, customer_scores, MP_max_rate, loan_repaid_probs, N_groups, N_banks, score_change_repay, score_change_default, score_range):
+    next_ref_customer_scores = []
+    for i in range(0, N_groups):
+        next_ref_customer_scores.append(np.zeros(len(ref_customers[i])))
+
+        for j in range(len(ref_customers[i])-1,-1,-1):
+            selection_rate = 1-j/len(ref_customers[i])
+
+            if selection_rate <= MP_max_rate[i][-1]:
+                optimal_bank = get_minimal_interest_bank(score_interest_rates,customer_scores,N_banks, i, j)
+                
+                for k in range(0,len(MP_max_rate[i])):    
+                    if selection_rate <= MP_max_rate[i][k] and optimal_bank == k:
+                        if get_repay_outcome(loan_repaid_probs[i](ref_customers[i][j])):
+                            next_ref_customer_scores[i][j]=ref_customers[i][j] + score_change_repay
+                        else:
+                            next_ref_customer_scores[i][j]=ref_customers[i][j] + score_change_default
+                        break
+                    elif selection_rate > MP_max_rate[i][k] and optimal_bank == k:
+                        optimal_bank = optimal_bank + 1
+            else:
+                next_ref_customer_scores[i][j]=ref_customers[i][j]
+
+        next_ref_customer_scores[i][next_ref_customer_scores[i] < score_range[0]] = score_range[0]        
+        next_ref_customer_scores[i][next_ref_customer_scores[i] > score_range[1]] = score_range[1]
+        next_ref_customer_scores[i]=np.sort(next_ref_customer_scores[i])
+    return next_ref_customer_scores
 
 
 # to populate group distributions
