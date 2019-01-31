@@ -206,9 +206,23 @@ def get_customer_pis(customer_cdfs):
     return pis
 
 
-## TODO: Refactor with interest rates dict
 #calculate combined scores based on best interest rate
-def get_combined_scores(customer_scores, score_interest_intersect):
+def get_combined_scores(customer_scores, score_interest_rates,N_banks):
+    combined_scores =[]
+    for i in range(0,len(customer_scores)):
+        tmp_combined_scores = [np.zeros(len(customer_scores[i][0]), dtype=np.int16)]
+        for j in range(len(customer_scores[i][0])-1,-1,-1):
+            bank = get_minimal_interest_bank(score_interest_rates, customer_scores, N_banks, i, j)
+            tmp_combined_scores[0][j] = customer_scores[i][bank][j]
+                
+        combined_scores.append(np.sort(tmp_combined_scores))        
+            
+    
+    return combined_scores
+
+## Old version...
+#calculate combined scores based on best interest rate
+def get_combined_scores2(customer_scores, score_interest_intersect):
     combined_scores =[]
     for i in range(0,len(customer_scores)):
         pointer = 0
