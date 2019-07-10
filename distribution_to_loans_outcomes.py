@@ -105,8 +105,10 @@ def get_utility_curves_eqopp(util, loan_repaid_probs, pis, group_size_ratio, sco
     for group in range(n_groups):
         for x in range(n_scores):
             rescaled_pis[group, x] = pis[group, x] * loan_repaid_probs[group](scores[x])
+        print(rescaled_pis[group])
         rescaled_pis[group] = rescaled_pis[group] / np.sum(rescaled_pis[group])
-
+        print(rescaled_pis[group])
+        print(np.sum(rescaled_pis[group]))
     cdfs = np.zeros(pis.shape)
     for group in range(n_groups):
         cdfs[group, 0] = rescaled_pis[group, 0]
