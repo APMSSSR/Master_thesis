@@ -9,7 +9,7 @@ class Customer_group:
         self.line_style = line_style
         self.size = size
         self.scores = scores
-        self.real_scores = self.set_real_scores(error_rate, score_error)
+        self.real_scores = self.set_real_scores(error_rate, score_error, market)
         self.sort_scores()
         self.initial_mean_score = np.mean(scores)
         self.loan_demand = loan_demand
@@ -31,7 +31,7 @@ class Customer_group:
         return outcome
     
         #simulating that some members of the group have better score/repay prob then rated
-    def set_real_scores(self, error_rate, score_error):
+    def set_real_scores(self, error_rate, score_error, market):
         real_scores = self.scores.copy()
         better_customers = np.sort(random.sample(range(0, self.size), int(self.size*error_rate)))
         for customer in better_customers:

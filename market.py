@@ -230,13 +230,13 @@ class Market:
         total_loans = np.zeros(self.step+1)
         total_utility = np.zeros(self.step+1)
         for group in groups:
-            print("Loans - " + group.name + ": " + str(self.loans[group.name][-1]) + ", Utility - " + group.name + ": " + str(self.utility[group.name][-1]))
+            print("Loans - " + group.name + ": " + str(self.loans[group.name][-1]) + ", Utility - " + group.name + ": " + str(self.utility[group.name][-1]/self.loans[group.name][-1]))
             
             total_loans += np.array(self.loans[group.name])
             total_utility += np.array(self.utility[group.name])
             ax[2][0].plot(list(range(len(self.loans[group.name]))), self.loans[group.name], color = group.color, LineStyle = group.line_style, label = "Total loans "+ group.name + " group")
             ax[2][1].plot(list(range(len(self.utility[group.name]))), self.utility[group.name], color = group.color, LineStyle = group.line_style,label = "Total utility for "+ group.name + " group")
-        print("Loans - Total: " + str(total_loans[-1]) + ", Utility - Total: " + str(total_utility[-1]))
+        print("Loans - Total: " + str(total_loans[-1]) + ", Utility - Total: " + str(total_utility[-1]/total_loans[-1]))
         
         ax[2][0].plot(list(range(len(total_loans))), total_loans, color="red", label= "Total loans")
         ax[2][0].set_ylabel('Number of loans')
@@ -291,12 +291,12 @@ class Market:
         total_loans = np.zeros(self.step+1)
         total_utility = np.zeros(self.step+1)
         for group in groups:
-            print("Loans - " + group.name + ": " + str(self.loans[group.name][-1]) + ", Utility - " + group.name + ": " + str(self.utility[group.name][-1]))
+            print("Loans - " + group.name + ": " + str(self.loans[group.name][-1]) + ", Utility - " + group.name + ": " + str(self.utility[group.name][-1]/self.loans[group.name][-1]))
             total_loans += np.array(self.loans[group.name])
             total_utility += np.array(self.utility[group.name])
             ax[2][0].plot(list(range(len(self.loans[group.name]))), self.loans[group.name], color = group.color, LineStyle = group.line_style, label = "Total loans "+ group.name + " group")
             ax[2][1].plot(list(range(len(self.utility[group.name]))), self.utility[group.name], color = group.color, LineStyle = group.line_style,label = "Total utility for "+ group.name + " group")
-        print("Loans - Total: " + str(total_loans[-1]) + ", Utility - Total: " + str(total_utility[-1]))
+        print("Loans - Total: " + str(total_loans[-1]) + ", Utility - Total: " + str(total_utility[-1]/total_loans[-1]))
         
         ax[2][0].plot(list(range(len(total_loans))), total_loans, color="red", label= "Total loans")
         ax[2][0].set_ylabel('Number of loans')
