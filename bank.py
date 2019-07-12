@@ -51,9 +51,9 @@ class Bank:
         return self.expected_group_utility_curve[customer_group.name]
     
     def change_interest_rate(self, interest_change, market):
-        if self.interest_rate_range[1] + interest_change >= 0:
-            self.interest_rate_range[0] += interest_change
-            self.interest_rate_range[1] += interest_change
+        if self.interest_rate_range[1] + interest_change >= market.min_interest_rate_range[1] and self.interest_rate_range[0] + interest_change <= market.max_interest_rate_range[0]:
+            self.interest_rate_range[0] = round(self.interest_rate_range[0]+ interest_change, 5)
+            self.interest_rate_range[1] = round(self.interest_rate_range[1]+ interest_change, 5)
             self.set_i_rates_mapping(market)
         return self.interest_rate_range
     
