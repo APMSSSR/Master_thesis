@@ -76,9 +76,10 @@ class Market:
     def get_DP_selection_rate(self, banks, groups):
         #Get expected bank utility and set the bank selection rate
         selection_rates = {}
-        group_sizes = []
+
         max_util = {}
         for bank in banks:
+            group_sizes = []
             selection_rates[bank.name] = {}
             utility_curve = {}
             for group in groups:
@@ -92,7 +93,7 @@ class Market:
                 
             merged_utility_curve = []
             for group in groups:
-                if group.size is not max(group_sizes):             
+                if group.size != max(group_sizes):             
                     x = list(range(0, group.size))
                     x = np.array(x)*(max(group_sizes)/group.size)
                     y = utility_curve[group.name]
@@ -110,9 +111,64 @@ class Market:
                 #print('Selection rate of ' + bank.name + ' bank for ' + group.name + ' group: ' + str(selection_rates[bank.name][group.name]))
 
         return [selection_rates, max_util]
-    
-    
+
     def get_EO_selection_rate(self, banks, groups):
+        #Get expected bank utility and set the bank selection rate
+        selection_rates = {}
+        max_util = {}
+        for bank in banks:
+            group_sizes = []
+            selection_rates[bank.name] = {}
+            utility_curve = {}
+            TPRs = {}
+            for group in groups:
+                utility = 0
+                utility_curve[group.name] = []
+                TPRs[group.name] = []
+                
+                for k in range(0, group.size):
+                    customer_score = bank.get_expected_customer_score(self, group.scores[k])
+                    repay_prob = group.score_repay_prob[customer_score]
+                    outcome = group.get_repay_outcome(repay_prob)
+                    if outcome:
+                        TPRs[group.name].append(k)
+                        utility += bank.get_customer_evaluation_utility(customer_score, group)
+                        utility_curve[group.name].append(utility)
+                #plt.plot(list(range(0,len(utility_curve[group.name]))), utility_curve[group.name])      
+                group_sizes.append(len(TPRs[group.name]))
+                              
+            merged_utility_curve = []
+            for group in groups:
+                TPR = TPRs[group.name]
+
+                if len(TPR) != max(group_sizes):             
+                    x = list(range(0, len(TPR)))
+                    x = np.array(x)*(max(group_sizes)/len(TPR))
+                    y = utility_curve[group.name]
+                    z = np.polyfit(x, y, 5)
+                    p = np.poly1d(z)
+                    merged_utility_curve += p(list(range(0,max(group_sizes))))
+                else:
+                    merged_utility_curve += utility_curve[group.name]
+            #plt.plot(list(range(0,len(merged_utility_curve))), merged_utility_curve,label="merged")
+            
+            for group in groups:
+                sel_rate = (len(merged_utility_curve) - np.argmax(list(reversed(merged_utility_curve)))-1)/max(group_sizes)
+                for i in range(0, len(TPRs[group.name])):
+                    if i/len(TPRs[group.name]) < sel_rate and (i+1)/len(TPRs[group.name]) >= sel_rate:
+                        sel_rate = TPRs[group.name][i+1]/group.size
+                
+                
+                bank.set_expected_group_utility_curve(group, merged_utility_curve)
+                #bank.plot_expected_group_utility_curve(group)
+                selection_rates[bank.name][group.name] = sel_rate
+                max_util[bank.name] = max(merged_utility_curve)
+                #print('Selection rate of ' + bank.name + ' bank for ' + group.name + ' group: ' + str(selection_rates[bank.name][group.name])
+
+        return [selection_rates, max_util]
+    
+    
+    def get_EO_selection_rate_old(self, banks, groups):
         #Get expected bank utility and set the bank selection rate
         selection_rates = {}
         group_sizes = []
@@ -202,7 +258,7 @@ class Market:
         
         for i in range(len(groups)):
             ax[0][i].hist(groups[i].scores, range = self.score_range, label='Step ' + str(self.step))
-            ax[0][i].set_title(groups[i].name + " group histogram change for " + self.policy + " policy")
+            ax[0][i].set_title(groups[i].name + " group histogram for " + self.policy + " policy in time step: " + str(self.step))
             ax[0][i].set_ylabel("Occurence")
             ax[0][i].set_xlabel("Score")
             ax[0][i].set_ylim([0,groups[i].size*0.75])
@@ -235,7 +291,7 @@ class Market:
             total_loans += np.array(self.loans[group.name])
             total_utility += np.array(self.utility[group.name])
             ax[2][0].plot(list(range(len(self.loans[group.name]))), self.loans[group.name], color = group.color, LineStyle = group.line_style, label = "Total loans "+ group.name + " group")
-            ax[2][1].plot(list(range(len(self.utility[group.name]))), self.utility[group.name], color = group.color, LineStyle = group.line_style,label = "Total utility for "+ group.name + " group")
+            ax[2][1].plot(list(range(len(self.utility[group.name]))), np.array(self.utility[group.name])/np.array(self.loans[group.name]), color = group.color, LineStyle = group.line_style,label = "Total utility per loan for "+ group.name + " group")
         print("Loans - Total: " + str(total_loans[-1]) + ", Utility - Total: " + str(total_utility[-1]/total_loans[-1]))
         
         ax[2][0].plot(list(range(len(total_loans))), total_loans, color="red", label= "Total loans")
@@ -246,16 +302,16 @@ class Market:
         ax[2][0].grid()
         ax[2][0].legend()
         
-        ax[2][1].plot(list(range(len(total_utility))), total_utility, color="red",label= "Total utility")
+        ax[2][1].plot(list(range(len(total_utility))), np.array(total_utility)/np.array(total_loans), color="red",label= "Total utility per loan")
         ax[2][1].set_ylabel('Utility')
         ax[2][1].set_xlabel('Step')
-        ax[2][1].set_title('Bank utility by groups: step ' + str(self.step))
+        ax[2][1].set_title('Bank utility per loan by groups: step ' + str(self.step))
         #ax[2][1].set_yscale('log')
         ax[2][1].grid()
         ax[2][1].legend()
         print()
         
-        fig.savefig('../plots/ICstep'+ '%03d' % self.step +'_ER00.png')
+        fig.savefig('../plots/IC_step'+ '%03d' % self.step +'_ER50.png')
         plt.close(fig)                  
         return 1
     
@@ -264,7 +320,7 @@ class Market:
         
         for i in range(len(groups)):
             ax[0][i].hist(groups[i].scores, range = self.score_range, label='Step ' + str(self.step))
-            ax[0][i].set_title(groups[i].name + " group histogram change for " + self.policy + " policy")
+            ax[0][i].set_title(groups[i].name + " group histogram for " + self.policy + " policy in time step: " + str(self.step))
             ax[0][i].set_ylabel("Occurence")
             ax[0][i].set_xlabel("Score")
             ax[0][i].set_ylim([0,groups[i].size*0.75])
@@ -295,7 +351,7 @@ class Market:
             total_loans += np.array(self.loans[group.name])
             total_utility += np.array(self.utility[group.name])
             ax[2][0].plot(list(range(len(self.loans[group.name]))), self.loans[group.name], color = group.color, LineStyle = group.line_style, label = "Total loans "+ group.name + " group")
-            ax[2][1].plot(list(range(len(self.utility[group.name]))), self.utility[group.name], color = group.color, LineStyle = group.line_style,label = "Total utility for "+ group.name + " group")
+            ax[2][1].plot(list(range(len(self.utility[group.name]))), np.array(self.utility[group.name])/np.array(self.loans[group.name]), color = group.color, LineStyle = group.line_style,label = "Total utility per loan "+ group.name + " group")
         print("Loans - Total: " + str(total_loans[-1]) + ", Utility - Total: " + str(total_utility[-1]/total_loans[-1]))
         
         ax[2][0].plot(list(range(len(total_loans))), total_loans, color="red", label= "Total loans")
@@ -306,16 +362,16 @@ class Market:
         ax[2][0].grid()
         ax[2][0].legend()
         
-        ax[2][1].plot(list(range(len(total_utility))), total_utility, color="red",label= "Total utility")
+        ax[2][1].plot(list(range(len(total_utility))), np.array(total_utility)/np.array(total_loans), color="red",label= "Total utility per loan")
         ax[2][1].set_ylabel('Utility')
         ax[2][1].set_xlabel('Step')
-        ax[2][1].set_title('Bank utility by groups: step ' + str(self.step))
+        ax[2][1].set_title('Bank utility per loan by groups: step ' + str(self.step))
         #ax[2][1].set_yscale('log')
         ax[2][1].grid()
         ax[2][1].legend()
         print()  
         
-        fig.savefig('../plots/PCstep'+ '%03d' % self.step +'ER00.png')
+        fig.savefig('../plots/PC_step'+ '%03d' % self.step +'_ER50.png')
         plt.close(fig)         
         return 1
     
