@@ -7,7 +7,6 @@ plt.rcParams['pdf.fonttype'] = 42
 
 class Market:
     def __init__(self, policy, policy_color, score_range = [300,850], repay_score = 75, default_score = -150, max_interest_rate_range =[0.5, 0.5], min_interest_rate_range=[0.001,0.001], plane_range=[0, 1], plane_slice_step=0.01):
-        plane_range[1] += plane_slice_step 
         self.score_range = score_range
         self.policy = policy
         self.policy_color = policy_color
@@ -27,12 +26,12 @@ class Market:
     #create interest rate plane    
     def set_interest_rate_plane(self, plane_range, plane_slice_step):
         interest_rate_plane = {}
-        plane_slices = np.arange(plane_range[0], plane_range[1] , plane_slice_step)
+        plane_slices = np.arange(plane_range[0], plane_range[1] + plane_slice_step , plane_slice_step)
         for pslice in plane_slices:
             interest_rate_range = np.array(self.max_interest_rate_range) - (np.array(self.max_interest_rate_range) - np.array(self.min_interest_rate_range))*(pslice/(plane_range[1]-plane_range[0]))
             x_axis = np.linspace(self.score_range[0], self.score_range[1], self.score_range[1]-self.score_range[0]+1, dtype=int)
             y_axis = np.interp(x_axis, self.score_range, interest_rate_range)
-            interest_rate_plane[str(pslice)] = dict(zip(x_axis, np.around(y_axis,5)))
+            interest_rate_plane[str(round(pslice,4))] = dict(zip(x_axis, np.around(y_axis,5)))
 
         return interest_rate_plane
     
@@ -311,7 +310,7 @@ class Market:
         ax[2][1].legend()
         print()
         
-        fig.savefig('../plots/IC_step'+ '%03d' % self.step +'_ER50.png')
+        fig.savefig('../plots/IC_step'+ '%03d' % self.step +'_ER00.png')
         plt.close(fig)                  
         return 1
     
@@ -371,7 +370,7 @@ class Market:
         ax[2][1].legend()
         print()  
         
-        fig.savefig('../plots/PC_step'+ '%03d' % self.step +'_ER50.png')
+        fig.savefig('../plots/PC_step'+ '%03d' % self.step +'_ER00.png')
         plt.close(fig)         
         return 1
     

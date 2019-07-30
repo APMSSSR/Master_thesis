@@ -32,7 +32,7 @@ def get_i_rates(interest_rates, score_range, bank_names):
         tmp_rates.append(y_axis)
         plt.plot(x_axis, y_axis,label=bank_names[i]+" bank")
     
-    plt.plot(x_axis, np.max(tmp_rates)-np.amin(tmp_rates,axis=0),color='black',LineStyle=':', label="customer utility curve")
+    #plt.plot(x_axis, np.max(tmp_rates)-np.amin(tmp_rates,axis=0),color='black',LineStyle=':', label="customer utility curve")
     plt.ylabel('Interest rate')
     plt.xlabel('Score')
     plt.title('Dependence of interest rate on score for different banks')
