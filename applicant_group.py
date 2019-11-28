@@ -2,7 +2,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
-class Customer_group:
+class Applicant_group:
     def __init__(self, name, color, line_style, size, scores, loan_demand, error_rate, score_error, market, repays, interest_rate_limit=np.inf):
         self.name = name
         self.color = color
@@ -33,14 +33,14 @@ class Customer_group:
         #simulating that some members of the group have better score/repay prob then rated
     def set_real_scores(self, error_rate, score_error, market):
         real_scores = self.scores.copy()
-        better_customers = np.sort(random.sample(range(0, self.size), int(self.size*error_rate)))
-        for customer in better_customers:
-            if real_scores[customer] + score_error < market.score_range[0]:
-                real_scores[customer] = market.score_range[0]
-            elif real_scores[customer] + score_error > market.score_range[1]:
-                real_scores[customer] = market.score_range[1]
+        better_applicants = np.sort(random.sample(range(0, self.size), int(self.size*error_rate)))
+        for applicant in better_applicants:
+            if real_scores[applicant] + score_error < market.score_range[0]:
+                real_scores[applicant] = market.score_range[0]
+            elif real_scores[applicant] + score_error > market.score_range[1]:
+                real_scores[applicant] = market.score_range[1]
             else:
-                real_scores[customer] += score_error
+                real_scores[applicant] += score_error
         return real_scores
     
     def get_mean_score_change(self):
@@ -64,27 +64,27 @@ class Customer_group:
         else:
             return market.default_score
     
-    def change_score(self, market, customer_index, outcome):
+    def change_score(self, market, applicant_index, outcome):
         score_change = self.select_score_change(market, outcome)
-        if self.scores[customer_index] + score_change < market.score_range[0]:
-            self.scores[customer_index] = market.score_range[0]
-        elif self.scores[customer_index] + score_change > market.score_range[1]:
-            self.scores[customer_index] = market.score_range[1]
+        if self.scores[applicant_index] + score_change < market.score_range[0]:
+            self.scores[applicant_index] = market.score_range[0]
+        elif self.scores[applicant_index] + score_change > market.score_range[1]:
+            self.scores[applicant_index] = market.score_range[1]
         else:
-            self.scores[customer_index] += score_change
+            self.scores[applicant_index] += score_change
         
-        return self.scores[customer_index]
+        return self.scores[applicant_index]
     
-    def change_real_score(self, market, customer_index, outcome):
+    def change_real_score(self, market, applicant_index, outcome):
         score_change = self.select_score_change(market, outcome)
-        if self.real_scores[customer_index] + score_change < market.score_range[0]:
-            self.real_scores[customer_index] = market.score_range[0]
-        elif self.real_scores[customer_index] + score_change > market.score_range[1]:
-            self.real_scores[customer_index] = market.score_range[1]
+        if self.real_scores[applicant_index] + score_change < market.score_range[0]:
+            self.real_scores[applicant_index] = market.score_range[0]
+        elif self.real_scores[applicant_index] + score_change > market.score_range[1]:
+            self.real_scores[applicant_index] = market.score_range[1]
         else:
-            self.real_scores[customer_index] += score_change
+            self.real_scores[applicant_index] += score_change
         
-        return self.real_scores[customer_index]
+        return self.real_scores[applicant_index]
     
     def plot_histogram(self, market):
         plt.figure()

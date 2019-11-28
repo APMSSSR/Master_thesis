@@ -32,7 +32,7 @@ def get_i_rates(interest_rates, score_range, bank_names):
         tmp_rates.append(y_axis)
         plt.plot(x_axis, y_axis,label=bank_names[i]+" bank")
     
-    #plt.plot(x_axis, np.max(tmp_rates)-np.amin(tmp_rates,axis=0),color='black',LineStyle=':', label="customer utility curve")
+    #plt.plot(x_axis, np.max(tmp_rates)-np.amin(tmp_rates,axis=0),color='black',LineStyle=':', label="applicant utility curve")
     plt.ylabel('Interest rate')
     plt.xlabel('Score')
     plt.title('Dependence of interest rate on score for different banks')
@@ -55,40 +55,40 @@ def get_repay_outcome(repay_probability):
 
 
 #outputs the index of a bank with lowest interest rate 
-def get_minimal_interest_bank(score_interest_rates, customer_scores, N_banks, group_index, customer_index):
+def get_minimal_interest_bank(score_interest_rates, applicant_scores, N_banks, group_index, applicant_index):
     interest_values=[]
     for bank in range(N_banks):
-        interest_values.append(score_interest_rates[customer_scores[group_index][bank][customer_index]][bank])
+        interest_values.append(score_interest_rates[applicant_scores[group_index][bank][applicant_index]][bank])
     
     return interest_values.index(min(interest_values)) 
 
-def get_next_ref_customer_scores(ref_customers, score_interest_rates, customer_scores, MP_max_rate, loan_repaid_probs, N_groups, N_banks, score_change_repay, score_change_default, score_range):
-    next_ref_customer_scores = []
+def get_next_ref_applicant_scores(ref_applicants, score_interest_rates, applicant_scores, MP_max_rate, loan_repaid_probs, N_groups, N_banks, score_change_repay, score_change_default, score_range):
+    next_ref_applicant_scores = []
     for i in range(0, N_groups):
-        next_ref_customer_scores.append(np.zeros(len(ref_customers[i])))
+        next_ref_applicant_scores.append(np.zeros(len(ref_applicants[i])))
 
-        for j in range(len(ref_customers[i])-1,-1,-1):
-            selection_rate = 1-j/len(ref_customers[i])
+        for j in range(len(ref_applicants[i])-1,-1,-1):
+            selection_rate = 1-j/len(ref_applicants[i])
 
             if selection_rate <= MP_max_rate[i][-1]:
-                optimal_bank = get_minimal_interest_bank(score_interest_rates,customer_scores,N_banks, i, j)
+                optimal_bank = get_minimal_interest_bank(score_interest_rates,applicant_scores,N_banks, i, j)
                 
                 for k in range(0,len(MP_max_rate[i])):    
                     if selection_rate <= MP_max_rate[i][k] and optimal_bank == k:
-                        if get_repay_outcome(loan_repaid_probs[i](ref_customers[i][j])):
-                            next_ref_customer_scores[i][j]=ref_customers[i][j] + score_change_repay
+                        if get_repay_outcome(loan_repaid_probs[i](ref_applicants[i][j])):
+                            next_ref_applicant_scores[i][j]=ref_applicants[i][j] + score_change_repay
                         else:
-                            next_ref_customer_scores[i][j]=ref_customers[i][j] + score_change_default
+                            next_ref_applicant_scores[i][j]=ref_applicants[i][j] + score_change_default
                         break
                     elif selection_rate > MP_max_rate[i][k] and optimal_bank == k:
                         optimal_bank = optimal_bank + 1
             else:
-                next_ref_customer_scores[i][j]=ref_customers[i][j]
+                next_ref_applicant_scores[i][j]=ref_applicants[i][j]
 
-        next_ref_customer_scores[i][next_ref_customer_scores[i] < score_range[0]] = score_range[0]        
-        next_ref_customer_scores[i][next_ref_customer_scores[i] > score_range[1]] = score_range[1]
-        next_ref_customer_scores[i]=np.sort(next_ref_customer_scores[i])
-    return next_ref_customer_scores
+        next_ref_applicant_scores[i][next_ref_applicant_scores[i] < score_range[0]] = score_range[0]        
+        next_ref_applicant_scores[i][next_ref_applicant_scores[i] > score_range[1]] = score_range[1]
+        next_ref_applicant_scores[i]=np.sort(next_ref_applicant_scores[i])
+    return next_ref_applicant_scores
 
 
 # to populate group distributions
@@ -123,12 +123,12 @@ def pis2cdf(pis):
 
     return cdf
 
-# get reference customer scores
-def get_ref_customers(customer_totals, pis_total, scores_list):
-    ref_customers = []
+# get reference applicant scores
+def get_ref_applicants(applicant_totals, pis_total, scores_list):
+    ref_applicants = []
     for i in range(0,len(pis_total)):
         pointer = 0
-        ref_customers.append(np.zeros(customer_totals[i]))
+        ref_applicants.append(np.zeros(applicant_totals[i]))
         for j in range(0, len(pis_total[i])):
             diff_up = 0
             diff_down = 0
@@ -148,36 +148,36 @@ def get_ref_customers(customer_totals, pis_total, scores_list):
 
             for k in range(0,int(pis_total[i][j])):
                 if j == 0:
-                    ref_customers[i][pointer] = np.round(scores_list[j] + k*step) 
+                    ref_applicants[i][pointer] = np.round(scores_list[j] + k*step) 
                 else:
-                    ref_customers[i][pointer] = np.round(scores_list[j]-diff_down + k*step)
+                    ref_applicants[i][pointer] = np.round(scores_list[j]-diff_down + k*step)
                 pointer += 1
     
-    return ref_customers
+    return ref_applicants
 
 
 # recalculate score for different banks
-#customers.shape = XxYxZ; X=Groups(white,black), Y=Banks, Z=Individual scores
-def get_customers(ref_customers, score_shifts, score_range):
-    customers = []
-    for i in range(0, len(ref_customers)):
-        customers.append(np.zeros([len(score_shifts), len(ref_customers[i])], dtype=np.int16))
-        for j in range(0,len(customers[i])):
-            for k in range(0,len(customers[i][j])):
-                if ref_customers[i][k] + score_shifts[j] < score_range[0]:
-                    customers[i][j][k] = score_range[0]
-                elif ref_customers[i][k] + score_shifts[j] > score_range[1]:
-                    customers[i][j][k] = score_range[1]
+#applicants.shape = XxYxZ; X=Groups(white,black), Y=Banks, Z=Individual scores
+def get_applicants(ref_applicants, score_shifts, score_range):
+    applicants = []
+    for i in range(0, len(ref_applicants)):
+        applicants.append(np.zeros([len(score_shifts), len(ref_applicants[i])], dtype=np.int16))
+        for j in range(0,len(applicants[i])):
+            for k in range(0,len(applicants[i][j])):
+                if ref_applicants[i][k] + score_shifts[j] < score_range[0]:
+                    applicants[i][j][k] = score_range[0]
+                elif ref_applicants[i][k] + score_shifts[j] > score_range[1]:
+                    applicants[i][j][k] = score_range[1]
                 else:
-                    customers[i][j][k] = ref_customers[i][k] + score_shifts[j]
-    return customers
+                    applicants[i][j][k] = ref_applicants[i][k] + score_shifts[j]
+    return applicants
 
-#customer scores to cdfs
-#customer_cdfs.shape = XxYxZ, X=Groups, Y=Banks, Z= CDF for score range
-def get_customer_cdfs(customers, scores_list):
-    customer_cdfs = np.ones([len(customers), len(customers[0]), len(scores_list)])
-    for i in range(0,len(customers)):
-        for j in range(0, len(customers[i])):
+#applicant scores to cdfs
+#applicant_cdfs.shape = XxYxZ, X=Groups, Y=Banks, Z= CDF for score range
+def get_applicant_cdfs(applicants, scores_list):
+    applicant_cdfs = np.ones([len(applicants), len(applicants[0]), len(scores_list)])
+    for i in range(0,len(applicants)):
+        for j in range(0, len(applicants[i])):
             pointer = 0
             for k in range(0, len(scores_list)):
                 if k == len(scores_list)-1:
@@ -185,35 +185,35 @@ def get_customer_cdfs(customers, scores_list):
                 else:
                     upper_thres = scores_list[k]+(scores_list[k+1]-scores_list[k])/2
 
-                for l in range(pointer,len(customers[i][j])):
-                    if customers[i][j][l] <= upper_thres:
+                for l in range(pointer,len(applicants[i][j])):
+                    if applicants[i][j][l] <= upper_thres:
                         pointer += 1 
                     else:
-                        customer_cdfs[i][j][k]=pointer/len(customers[i][j])
+                        applicant_cdfs[i][j][k]=pointer/len(applicants[i][j])
                         break
-    return customer_cdfs
+    return applicant_cdfs
 
 # to populate multiple group distributions
-def get_customer_pis(customer_cdfs):
+def get_applicant_pis(applicant_cdfs):
     pis=[]
-    for i in range(0,len(customer_cdfs)):
-        tmp_pis = np.zeros([len(customer_cdfs[i]), len(customer_cdfs[i][0])])
-        for j in range(len(customer_cdfs[i])):
-            tmp_pis[j][0] = customer_cdfs[i][j][0]
-            for score in range(len(customer_cdfs[i][j])-1):
-                tmp_pis[j][score+1] = customer_cdfs[i][j][score+1] - customer_cdfs[i][j][score]
+    for i in range(0,len(applicant_cdfs)):
+        tmp_pis = np.zeros([len(applicant_cdfs[i]), len(applicant_cdfs[i][0])])
+        for j in range(len(applicant_cdfs[i])):
+            tmp_pis[j][0] = applicant_cdfs[i][j][0]
+            for score in range(len(applicant_cdfs[i][j])-1):
+                tmp_pis[j][score+1] = applicant_cdfs[i][j][score+1] - applicant_cdfs[i][j][score]
         pis.append(tmp_pis)
     return pis
 
 
 #calculate combined scores based on best interest rate
-def get_combined_scores(customer_scores, score_interest_rates,N_banks):
+def get_combined_scores(applicant_scores, score_interest_rates,N_banks):
     combined_scores =[]
-    for i in range(0,len(customer_scores)):
-        tmp_combined_scores = [np.zeros(len(customer_scores[i][0]), dtype=np.int16)]
-        for j in range(len(customer_scores[i][0])-1,-1,-1):
-            bank = get_minimal_interest_bank(score_interest_rates, customer_scores, N_banks, i, j)
-            tmp_combined_scores[0][j] = customer_scores[i][bank][j]
+    for i in range(0,len(applicant_scores)):
+        tmp_combined_scores = [np.zeros(len(applicant_scores[i][0]), dtype=np.int16)]
+        for j in range(len(applicant_scores[i][0])-1,-1,-1):
+            bank = get_minimal_interest_bank(score_interest_rates, applicant_scores, N_banks, i, j)
+            tmp_combined_scores[0][j] = applicant_scores[i][bank][j]
                 
         combined_scores.append(np.sort(tmp_combined_scores))        
             
@@ -222,21 +222,21 @@ def get_combined_scores(customer_scores, score_interest_rates,N_banks):
 
 ## Old version...
 #calculate combined scores based on best interest rate
-def get_combined_scores2(customer_scores, score_interest_intersect):
+def get_combined_scores2(applicant_scores, score_interest_intersect):
     combined_scores =[]
-    for i in range(0,len(customer_scores)):
+    for i in range(0,len(applicant_scores)):
         pointer = 0
         bank = 0
-        tmp_combined_scores = np.zeros(len(customer_scores[i][bank]))
-        for j in range(len(customer_scores[i][bank])-1,-1,-1):
-            if customer_scores[i][bank][j] > score_interest_intersect[pointer]:
-                tmp_combined_scores[j] = customer_scores[i][bank][j]
+        tmp_combined_scores = np.zeros(len(applicant_scores[i][bank]))
+        for j in range(len(applicant_scores[i][bank])-1,-1,-1):
+            if applicant_scores[i][bank][j] > score_interest_intersect[pointer]:
+                tmp_combined_scores[j] = applicant_scores[i][bank][j]
             else:
                 if pointer < 1:
                     pointer += 1
-                if bank < len(customer_scores[i])-1:
+                if bank < len(applicant_scores[i])-1:
                     bank += 1
-                tmp_combined_scores[j] = customer_scores[i][bank][j]
+                tmp_combined_scores[j] = applicant_scores[i][bank][j]
                 
         combined_scores.append(tmp_combined_scores)        
             
@@ -245,7 +245,7 @@ def get_combined_scores2(customer_scores, score_interest_intersect):
 
 
 
-#distribution if we take into account that customers take loan with lowest interest rate
+#distribution if we take into account that applicants take loan with lowest interest rate
 def get_pi_combined(pi_normal,pi_conservative, scores, score_interest_intersect):
     pis = np.zeros(pi_conservative.size)
     #find index of scores where the two interest rates change

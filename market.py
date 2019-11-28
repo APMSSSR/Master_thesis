@@ -57,8 +57,8 @@ class Market:
                 utility = 0
                 utility_curve[group.name] = []
                 for k in range(0, group.size):
-                    customer_score = bank.get_expected_customer_score(self, group.scores[k])
-                    utility += bank.get_customer_evaluation_utility(customer_score, group)
+                    applicant_score = bank.get_expected_applicant_score(self, group.scores[k])
+                    utility += bank.get_applicant_evaluation_utility(applicant_score, group)
                     utility_curve[group.name].append(utility)
                 bank.set_expected_group_utility_curve(group, utility_curve[group.name])
                 #bank.plot_expected_group_utility_curve(group)
@@ -86,8 +86,8 @@ class Market:
                 utility_curve[group.name] = []
                 group_sizes.append(group.size)
                 for k in range(0, group.size):
-                    customer_score = bank.get_expected_customer_score(self, group.scores[k])
-                    utility += bank.get_customer_evaluation_utility(customer_score, group)
+                    applicant_score = bank.get_expected_applicant_score(self, group.scores[k])
+                    utility += bank.get_applicant_evaluation_utility(applicant_score, group)
                     utility_curve[group.name].append(utility)
                 
             merged_utility_curve = []
@@ -126,12 +126,12 @@ class Market:
                 TPRs[group.name] = []
                 
                 for k in range(0, group.size):
-                    customer_score = bank.get_expected_customer_score(self, group.scores[k])
-                    repay_prob = group.score_repay_prob[customer_score]
+                    applicant_score = bank.get_expected_applicant_score(self, group.scores[k])
+                    repay_prob = group.score_repay_prob[applicant_score]
                     outcome = group.get_repay_outcome(repay_prob)
                     if outcome:
                         TPRs[group.name].append(k)
-                        utility += bank.get_customer_evaluation_utility(customer_score, group)
+                        utility += bank.get_applicant_evaluation_utility(applicant_score, group)
                         utility_curve[group.name].append(utility)
                 #plt.plot(list(range(0,len(utility_curve[group.name]))), utility_curve[group.name])      
                 group_sizes.append(len(TPRs[group.name]))
@@ -184,10 +184,10 @@ class Market:
                 group_sizes.append(group.size)
                 
                 for k in range(0, group.size):
-                    customer_score = bank.get_expected_customer_score(self, group.scores[k])
-                    utility += bank.get_customer_evaluation_utility(customer_score, group)
+                    applicant_score = bank.get_expected_applicant_score(self, group.scores[k])
+                    utility += bank.get_applicant_evaluation_utility(applicant_score, group)
                     utility_curve[group.name].append(utility)
-                    TPR = group.score_repay_prob[customer_score]
+                    TPR = group.score_repay_prob[applicant_score]
                     TPRs[group.name].append(TPR)
             
             #add TPR utility curves together
@@ -246,7 +246,7 @@ class Market:
             for j in range(len(groups)):
                 ax[i,j].plot(list(range(0,len(banks[i].real_group_utility_curve[groups[j].name]))), banks[i].real_group_utility_curve[groups[j].name], color='black',LineStyle=':', label="Bank utility curve")
                 ax[i,j].set_title('Utility curve of ' + str(banks[i].name) + ' bank for ' + str(groups[j].name) + ' group')
-                ax[i,j].set_xlabel('Customers')
+                ax[i,j].set_xlabel('Applicants')
                 ax[i,j].set_ylabel('Bank utility')
                 ax[i,j].legend(loc="upper left")
                 ax[i,j].grid()
