@@ -56,10 +56,11 @@ class Market:
             for group in groups:
                 utility = 0
                 utility_curve[group.name] = []
-                for k in range(0, group.size):
-                    applicant_score = bank.get_expected_applicant_score(self, group.scores[k])
+                for applicant in group.applicants:
+                    applicant_score = bank.get_expected_applicant_score(self, applicant.score)
                     utility += bank.get_applicant_evaluation_utility(applicant_score, group)
                     utility_curve[group.name].append(utility)
+                
                 bank.set_expected_group_utility_curve(group, utility_curve[group.name])
                 #bank.plot_expected_group_utility_curve(group)
                 tmp_max_util += max(utility_curve[group.name])
@@ -85,8 +86,8 @@ class Market:
                 utility = 0
                 utility_curve[group.name] = []
                 group_sizes.append(group.size)
-                for k in range(0, group.size):
-                    applicant_score = bank.get_expected_applicant_score(self, group.scores[k])
+                for applicant in group.applicants:
+                    applicant_score = bank.get_expected_applicant_score(self, applicant.score)
                     utility += bank.get_applicant_evaluation_utility(applicant_score, group)
                     utility_curve[group.name].append(utility)
                 
@@ -125,8 +126,8 @@ class Market:
                 utility_curve[group.name] = []
                 TPRs[group.name] = []
                 
-                for k in range(0, group.size):
-                    applicant_score = bank.get_expected_applicant_score(self, group.scores[k])
+                for applicant in group.applicants:
+                    applicant_score = bank.get_expected_applicant_score(self, applicant.score)
                     repay_prob = group.score_repay_prob[applicant_score]
                     outcome = group.get_repay_outcome(repay_prob)
                     if outcome:
@@ -183,8 +184,8 @@ class Market:
                 TPRs[group.name] = []
                 group_sizes.append(group.size)
                 
-                for k in range(0, group.size):
-                    applicant_score = bank.get_expected_applicant_score(self, group.scores[k])
+                for applicant in group.applicants:
+                    applicant_score = bank.get_expected_applicant_score(self, applicant.score)
                     utility += bank.get_applicant_evaluation_utility(applicant_score, group)
                     utility_curve[group.name].append(utility)
                     TPR = group.score_repay_prob[applicant_score]
@@ -256,7 +257,7 @@ class Market:
         fig, ax = plt.subplots(3,len(groups),figsize=(16,20))
         
         for i in range(len(groups)):
-            ax[0][i].hist(groups[i].scores, range = self.score_range, label='Step ' + str(self.step))
+            ax[0][i].hist(groups[i].get_scores(), range = self.score_range, label='Step ' + str(self.step))
             ax[0][i].set_title(groups[i].name + " group histogram for " + self.policy + " policy in time step: " + str(self.step))
             ax[0][i].set_ylabel("Occurence")
             ax[0][i].set_xlabel("Score")
@@ -318,7 +319,7 @@ class Market:
         fig, ax = plt.subplots(3,len(groups),figsize=(16,20))
         
         for i in range(len(groups)):
-            ax[0][i].hist(groups[i].scores, range = self.score_range, label='Step ' + str(self.step))
+            ax[0][i].hist(groups[i].get_scores(), range = self.score_range, label='Step ' + str(self.step))
             ax[0][i].set_title(groups[i].name + " group histogram for " + self.policy + " policy in time step: " + str(self.step))
             ax[0][i].set_ylabel("Occurence")
             ax[0][i].set_xlabel("Score")
