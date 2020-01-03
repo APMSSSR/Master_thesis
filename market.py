@@ -99,6 +99,8 @@ class Market:
                     y = utility_curve[group.name]
                     z = np.polyfit(x, y, 3)
                     p = np.poly1d(z)
+                    if len(merged_utility_curve) == 0:
+                        merged_utility_curve = [0] * max(group_sizes)
                     merged_utility_curve += p(list(range(0,max(group_sizes))))
                 else:
                     merged_utility_curve += utility_curve[group.name]
@@ -129,9 +131,9 @@ class Market:
                 for applicant in group.applicants:
                     applicant_score = bank.get_expected_applicant_score(self, applicant.score)
                     repay_prob = group.score_repay_prob[applicant_score]
-                    outcome = group.get_repay_outcome(repay_prob)
+                    outcome = applicant.get_repay_outcome(self)
                     if outcome:
-                        TPRs[group.name].append(k)
+                        TPRs[group.name].append(applicant)
                         utility += bank.get_applicant_evaluation_utility(applicant_score, group)
                         utility_curve[group.name].append(utility)
                 #plt.plot(list(range(0,len(utility_curve[group.name]))), utility_curve[group.name])      
@@ -147,6 +149,8 @@ class Market:
                     y = utility_curve[group.name]
                     z = np.polyfit(x, y, 5)
                     p = np.poly1d(z)
+                    if len(merged_utility_curve) == 0:
+                        merged_utility_curve = [0] * max(group_sizes)
                     merged_utility_curve += p(list(range(0,max(group_sizes))))
                 else:
                     merged_utility_curve += utility_curve[group.name]
@@ -156,7 +160,7 @@ class Market:
                 sel_rate = (len(merged_utility_curve) - np.argmax(list(reversed(merged_utility_curve)))-1)/max(group_sizes)
                 for i in range(0, len(TPRs[group.name])):
                     if i/len(TPRs[group.name]) < sel_rate and (i+1)/len(TPRs[group.name]) >= sel_rate:
-                        sel_rate = TPRs[group.name][i+1]/group.size
+                        sel_rate = (i+1)/group.size
                 
                 
                 bank.set_expected_group_utility_curve(group, merged_utility_curve)
